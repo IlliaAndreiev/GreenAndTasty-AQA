@@ -1,71 +1,46 @@
 # Green & Tasty — AQA
 
-Automated testing project for the Green & Tasty
-group pre-order application.
+**Selected direction:** Direction 1 — Group Pre-Order  
+**Current target:** Level 1
 
-## Tech Stack
+## Architecture
 
-- C#
-- .NET 9
-- NUnit
-- Microsoft Playwright
-- ASP.NET Core API
-- GitHub Actions
+- **Backend:** ASP.NET Core Web API, Entity Framework Core, SQLite
+- **Frontend:** Angular
+- **Automation:** C#, NUnit, Playwright
+- **CI:** GitHub Actions
 
-## Test Coverage
+The project uses API tests for group preorder behavior and a UI smoke test for the Angular group-order page.
 
-### Level 1 — Group Pre-order Overview
+**Important:** The current UI test uses frontend demo data. It does not yet verify end-to-end integration with the real Backend.
 
-- Owner can view group participants
-- Participant dishes and quantities
-- Participant totals and group total
-- Submitted and pending sessions
-- Unauthorized access (401)
-- Forbidden access (403)
-- Non-existing resources (404)
-- Owner session deletion protection
+## Run API tests
 
-### Additional API Tests
-
-- Submit authorization and validation
-- Guest session deletion validation
-- API health check
-
-### UI Tests
-
-- TodoMVC page loading
-- Adding and completing a todo item
-
-The TodoMVC tests use a public demo application
-to demonstrate Playwright UI automation.
-
-## Run Tests Locally
-
-Start the Green & Tasty backend on:
-
-https://localhost:7228
+Start the Backend in the `Testing` environment on port `5065`.
 
 Then run:
 
 ```powershell
-dotnet test
+$env:AQA_BASE_URL = "http://127.0.0.1:5065"
+dotnet test .\RestaurantAqa.Tests\RestaurantAqa.Tests.csproj
 ```
 
-## Generate TRX Report
+## Run the empty-group test
 
 ```powershell
-dotnet test --logger "trx;LogFileName=aqa-results.trx" --results-directory TestResults
+dotnet test .\RestaurantAqa.Tests\RestaurantAqa.Tests.csproj --filter "FullyQualifiedName~OwnerCanViewEmptyGroup"
 ```
 
-## Playwright Artifacts
+## Test data
 
-Screenshots and traces are saved automatically
-when a UI test fails.
+The Backend exposes test-only fixture endpoints in the `Testing` environment. The empty-group test creates its own reservation and group and deletes them in a `finally` block.
 
 ## CI
 
-GitHub Actions currently runs the Playwright
-UI smoke tests.
+GitHub Actions builds the application, starts the Backend and Angular frontend, runs automated tests, and uploads test reports and diagnostic artifacts.
 
-Backend API tests require a running local API
-and seeded test data.
+## Current coverage and limitations
+
+Covered scenarios include API health, group-session retrieval, authorization and negative cases, and an empty group with zero total.
+
+Remaining Level 1 work includes verifying that the group total updates when a participant changes their cart, expanding role-based access checks, and validating frontend behavior against the real Backend.

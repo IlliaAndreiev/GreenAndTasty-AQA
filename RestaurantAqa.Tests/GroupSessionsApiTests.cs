@@ -494,6 +494,7 @@ public class GroupSessionsApiTests
 
 
     
+
     [Test]
     public async Task OwnerCanViewEmptyGroup()
     {
@@ -510,43 +511,46 @@ public class GroupSessionsApiTests
 
         Assert.That(testData, Is.Not.Null);
 
-        using var response = await GetSessions(
-            testData!.GroupReservationId.ToString(),
-            testData.OwnerId.ToString()
-        );
+        try
+        {
+            using var response = await GetSessions(
+                testData!.GroupReservationId.ToString(),
+                testData.OwnerId.ToString()
+            );
 
-        Assert.That(
-            response.StatusCode,
-            Is.EqualTo(HttpStatusCode.OK)
-        );
+            Assert.That(
+                response.StatusCode,
+                Is.EqualTo(HttpStatusCode.OK)
+            );
 
-        using var document = JsonDocument.Parse(
-            await response.Content.ReadAsStringAsync()
-        );
+            using var document = JsonDocument.Parse(
+                await response.Content.ReadAsStringAsync()
+            );
 
-        var root = document.RootElement;
+            var root = document.RootElement;
+            var participants = root.GetProperty("participants");
 
-        var participants = root.GetProperty("participants");
+            Assert.That(
+                participants.GetArrayLength(),
+                Is.EqualTo(0)
+            );
 
-        Assert.That(
-            participants.GetArrayLength(),
-            Is.EqualTo(0)
-        );
+            var total = root.GetProperty("total").GetDecimal();
 
-        var total = root.GetProperty("total").GetDecimal();
+            Assert.That(total, Is.EqualTo(0m));
+        }
+        finally
+        {
+            using var cleanupResponse = await _client.DeleteAsync(
+                $"/aqa/empty-group/{testData!.GroupReservationId}"
+            );
 
-        Assert.That(total, Is.EqualTo(0m));
-
-        using var cleanupResponse = await _client.DeleteAsync(
-            $"/aqa/empty-group/{testData.GroupReservationId}"
-        );
-
-        Assert.That(
-            cleanupResponse.StatusCode,
-            Is.EqualTo(HttpStatusCode.NoContent)
-        );
+            Assert.That(
+                cleanupResponse.StatusCode,
+                Is.EqualTo(HttpStatusCode.NoContent)
+            );
+        }
     }
-
 
 
 }

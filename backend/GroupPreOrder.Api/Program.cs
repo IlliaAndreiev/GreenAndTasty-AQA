@@ -53,30 +53,24 @@ app.MapControllers();
 
 if (app.Environment.IsEnvironment("Testing"))
 {
+    
     app.MapGet("/aqa/test-data", async (AppDbContext db) =>
-        {
-        var ownerId = Guid.NewGuid();
+    {
+        var data = await db.GroupReservations
+            .AsNoTracking()
+            .Where(g => db.GuestSessions.Count(s => s.GroupReservationId == g.Id) == 3)
+            .Select(g => new
+            {
+                OwnerId = g.Reservation.OwnerId,
+                ReservationId = g.ReservationId,
+                GroupReservationId = g.Id
+            })
+            .FirstOrDefaultAsync();
 
-        var reservation = new Reservation
-        {
-            OwnerId = ownerId
-        };
+        if (data == null)
+            return Results.NotFound("No group with 3 participants found.");
 
-        var group = new GroupReservation
-        {
-            Reservation = reservation,
-            Status = GroupReservationStatus.Draft
-        };
-
-        db.GroupReservations.Add(group);
-        await db.SaveChangesAsync();
-
-        return Results.Ok(new
-        {
-            OwnerId = ownerId,
-            ReservationId = reservation.Id,
-            GroupReservationId = group.Id
-        });
+        return Results.Ok(data);
     });
 
         app.MapPost("/aqa/empty-group", async (AppDbContext db) =>
