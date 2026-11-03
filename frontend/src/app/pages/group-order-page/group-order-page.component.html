@@ -1,0 +1,149 @@
+
+<main class="page">
+  <header class="page-header">
+    <div class="header-title">
+      <h1>Group Pre-Order</h1>
+
+      @if (!loading() && !error()) {
+        <span class="header-badge">
+          {{ groupStatus() === 'Open'
+            ? 'Collecting pre-orders'
+            : 'Sent to Restaurant' }}
+        </span>
+      }
+    </div>
+
+    @if (invite(); as booking) {
+      <div class="reservation-details">
+        <p>
+          <span class="detail-icon" aria-hidden="true">⌖</span>
+          {{ booking.LocationAddress }}
+        </p>
+
+        <p>
+          <span class="detail-icon" aria-hidden="true">▦</span>
+          {{ booking.StartTime | date:'MMM d, y' }}
+        </p>
+
+        <p>
+          <span class="detail-icon" aria-hidden="true">◷</span>
+          {{ booking.StartTime | date:'HH:mm' }}
+          –
+          {{ booking.EndTime | date:'HH:mm' }}
+        </p>
+
+        <p>
+          <span class="detail-icon" aria-hidden="true">♙</span>
+          {{ participants().length }} of {{ booking.MaxGuestCount }} guests
+        </p>
+      </div>
+    }
+  </header>
+
+  @if (loading()) {
+    <p>Loading group pre-order...</p>
+  } @else if (error()) {
+    <section class="error-state">
+      <p>{{ error() }}</p>
+      <button type="button" (click)="loadGroup()">
+        Try again
+      </button>
+    </section>
+  } @else {
+    @if (pendingCount() > 0) {
+      <div class="warning-banner" role="status">
+        {{ pendingCount() }}
+        {{ pendingCount() === 1 ? 'participant' : 'participants' }}
+        {{ pendingCount() === 1 ? 'hasn’t' : 'haven’t' }}
+        submitted their pre-order yet.
+      </div>
+    }
+
+    <section class="participants-section" aria-label="Participants">
+      @if (!hasDishes()) {
+        <p class="empty-state">
+          Participants haven’t added any dishes yet
+        </p>
+      }
+
+      <ul class="participants">
+        @for (person of participants(); track person.id) {
+          <li>
+            <app-participant-card
+              [participant]="person"
+              [isOwner]="person.id === ownerSessionId()"
+            />
+          </li>
+        }
+      </ul>
+    </section>
+
+    <footer class="order-summary">
+      <h2>Order Summary</h2>
+
+      @if (consolidatedItems().length > 0) {
+        <ul class="consolidated-items">
+          @for (item of consolidatedItems(); track item.name) {
+            <li>{{ item.name }} × {{ item.quantity }}</li>
+          }
+        </ul>
+      }
+
+      <div class="grand-total">
+        <strong>Grand Total</strong>
+        <strong>{{ grandTotal() | currency }}</strong>
+      </div>
+
+      
+        @if (!isSubmitted() && groupStatus() === 'Open') {
+        <button
+            type="button"
+            class="submit-button"
+            [disabled]="!canSubmit()"
+            (click)="openSubmitModal()"
+        >
+            Submit Pre-Order
+        </button>
+        }
+
+    </footer>
+  }
+
+  
+
+@if (showSubmitModal()) {
+  <app-modal
+    title="Submit Group Pre-Order?"
+    width="440px"
+    [closeOnBackdrop]="!isSubmitting()"
+    (closed)="closeSubmitModal()"
+  >
+    <p>
+      Are you sure you want to send the group pre-order
+      to the restaurant?
+    </p>
+
+    <div modal-actions>
+      <button
+        type="button"
+        class="cancel-button"
+        [disabled]="isSubmitting()"
+        (click)="closeSubmitModal()"
+      >
+        Cancel
+      </button>
+
+      <button
+        type="button"
+        class="confirm-button"
+        [disabled]="isSubmitting()"
+        (click)="confirmSubmit()"
+      >
+        {{ isSubmitting() ? 'Submitting…' : 'Submit' }}
+      </button>
+    </div>
+  </app-modal>
+}
+
+
+</main>

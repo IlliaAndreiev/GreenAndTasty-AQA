@@ -25,3 +25,8 @@ Thumbs.db
 # Local configuration
 .env
 .env.*
+
+**/node_modules/
+**/.angular/
+**/dist/
+**/coverage/

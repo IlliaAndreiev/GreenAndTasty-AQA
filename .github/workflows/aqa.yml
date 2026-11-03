@@ -14,6 +14,7 @@ jobs:
       ASPNETCORE_ENVIRONMENT: Testing
       ConnectionStrings__DefaultConnection: "Data Source=aqa_ci.db"
       AQA_BASE_URL: http://127.0.0.1:5065
+      AQA_FRONTEND_URL: http://127.0.0.1:4200
 
     steps:
       - name: Checkout repository
@@ -25,6 +26,17 @@ jobs:
           dotnet-version: |
             8.0.x
             9.0.x
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Angular dependencies
+        working-directory: frontend
+        run: npm ci
 
       - name: Build Backend
         run: dotnet build backend/GroupPreOrder.Api/GroupPreOrder.Api.csproj
@@ -61,6 +73,27 @@ jobs:
           cat backend.log
           exit 1
 
+      - name: Start Angular Frontend
+        shell: bash
+        run: |
+          cd frontend
+          npm start -- --host 127.0.0.1 --port 4200 \
+            > ../frontend.log 2>&1 &
+
+      - name: Wait for Angular Frontend
+        shell: bash
+        run: |
+          for i in {1..90}; do
+            if curl --fail --silent http://127.0.0.1:4200/ > /dev/null; then
+              echo "Angular Frontend is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+
+          cat frontend.log
+          exit 1
+
       - name: Run all AQA tests
         run: |
           dotnet test RestaurantAqa.Tests/RestaurantAqa.Tests.csproj \
@@ -78,4 +111,5 @@ jobs:
             RestaurantAqa.Tests/**/screenshots/
             RestaurantAqa.Tests/**/traces/
             backend.log
+            frontend.log
           if-no-files-found: ignore

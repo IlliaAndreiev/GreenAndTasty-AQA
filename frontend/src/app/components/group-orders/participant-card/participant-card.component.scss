@@ -1,0 +1,128 @@
+
+:host {
+  display: block;
+  height: 100%;
+}
+
+.card {
+  box-sizing: border-box;
+  height: 100%;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e2e5e1;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.035);
+}
+
+.title {
+  margin: 0 0 12px;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.chip {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.submitted {
+  color: #0b5b29;
+  background: #e9ffea;
+}
+
+.pending {
+  color: #8a5b00;
+  background: #fff3d6;
+}
+
+.items {
+  padding: 0;
+  margin: 20px 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.avatar {
+  box-sizing: border-box;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.initial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f7a37;
+  background: #e9ffea;
+  font-weight: 600;
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.qty {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.price {
+  min-width: 72px;
+  text-align: right;
+  font-weight: 600;
+}
+
+.empty {
+  padding: 32px 0;
+  color: #898989;
+  text-align: center;
+}
+
+.subtotal {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #ededed;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 16px;
+  }
+
+  .item {
+    gap: 8px;
+  }
+
+  .avatar {
+    flex-basis: 40px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .price {
+    min-width: 58px;
+    font-size: 12px;
+  }
+}
