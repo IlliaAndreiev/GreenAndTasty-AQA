@@ -419,4 +419,61 @@ public class GroupSessionsApiTests
     }
 
 
+    [Test]
+    public async Task GroupTotalEqualsSumOfParticipantTotals()
+    {
+        using var response = await GetSessions(GroupId, OwnerId);
+
+        Assert.That(
+            response.StatusCode,
+            Is.EqualTo(HttpStatusCode.OK)
+        );
+
+        using var json = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync()
+        );
+
+        var root = json.RootElement;
+        var participants = root.GetProperty("participants");
+
+        decimal calculatedTotal = 0;
+
+        foreach (var participant in participants.EnumerateArray())
+        {
+            decimal calculatedParticipantTotal = 0;
+
+            foreach (var item in participant
+                .GetProperty("items").EnumerateArray())
+            {
+                var price = item.GetProperty("dish")
+                    .GetProperty("price").GetDecimal();
+
+                var quantity = item.GetProperty("quantity")
+                    .GetInt32();
+
+                calculatedParticipantTotal += price * quantity;
+            }
+
+            var participantTotal = participant
+                .GetProperty("total").GetDecimal();
+
+            Assert.That(
+                participantTotal,
+                Is.EqualTo(calculatedParticipantTotal),
+                "Participant total must equal the sum of dish prices multiplied by quantities."
+            );
+
+            calculatedTotal += participantTotal;
+        }
+
+        var groupTotal = root.GetProperty("total").GetDecimal();
+
+        Assert.That(
+            groupTotal,
+            Is.EqualTo(calculatedTotal),
+            "Group total must equal the sum of all participant totals."
+        );
+    }
+
+
 }

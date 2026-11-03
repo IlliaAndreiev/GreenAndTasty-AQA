@@ -73,7 +73,7 @@ public class UiTestBase : PageTest
             }
             catch (Exception ex)
             {
-                TestContext.WriteLine(
+                TestContext.Out.WriteLine(
                     $"Screenshot failed: {ex.Message}"
                 );
             }
