@@ -1,0 +1,52 @@
+name: Green and Tasty AQA
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  ui-tests:
+    name: Build and Playwright UI Tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: RestaurantAqa.Tests
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build tests
+        run: dotnet build --no-restore
+
+      - name: Install Playwright Chromium
+        run: |
+          pwsh bin/Debug/net9.0/playwright.ps1 install --with-deps chromium
+
+      - name: Run UI tests
+        run: |
+          dotnet test --no-build \
+            --filter "FullyQualifiedName~FirstE2ETests" \
+            --logger "trx;LogFileName=ui-results.trx" \
+            --results-directory TestResults
+
+      - name: Upload test reports and Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-ui-results
+          path: |
+            RestaurantAqa.Tests/TestResults/
+            RestaurantAqa.Tests/**/playwright-artifacts/
+          if-no-files-found: warn
+          retention-days: 14

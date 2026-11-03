@@ -1,0 +1,27 @@
+# .NET build files
+**/bin/
+**/obj/
+
+# Test results
+**/TestResults/
+**/playwright-artifacts/
+*.trx
+
+# IDE
+.vs/
+.vscode/
+.idea/
+
+# Local databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local configuration
+.env
+.env.*
