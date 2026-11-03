@@ -6,47 +6,76 @@ on:
   workflow_dispatch:
 
 jobs:
-  ui-tests:
-    name: Build and Playwright UI Tests
+  aqa-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
-    defaults:
-      run:
-        working-directory: RestaurantAqa.Tests
+    env:
+      ASPNETCORE_ENVIRONMENT: Testing
+      ConnectionStrings__DefaultConnection: "Data Source=aqa_ci.db"
+      AQA_BASE_URL: http://127.0.0.1:5065
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET 9
+      - name: Setup .NET 8 and 9
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: |
+            8.0.x
+            9.0.x
 
-      - name: Restore dependencies
-        run: dotnet restore
+      - name: Build Backend
+        run: dotnet build backend/GroupPreOrder.Api/GroupPreOrder.Api.csproj
 
-      - name: Build tests
-        run: dotnet build --no-restore
+      - name: Build AQA tests
+        run: dotnet build RestaurantAqa.Tests/RestaurantAqa.Tests.csproj
 
       - name: Install Playwright Chromium
+        shell: pwsh
         run: |
-          pwsh bin/Debug/net9.0/playwright.ps1 install --with-deps chromium
+          ./RestaurantAqa.Tests/bin/Debug/net9.0/playwright.ps1 install --with-deps chromium
 
-      - name: Run UI tests
+      - name: Start Backend
+        shell: bash
         run: |
-          dotnet test --no-build \
-            --filter "FullyQualifiedName~FirstE2ETests" \
-            --logger "trx;LogFileName=ui-results.trx" \
-            --results-directory TestResults
+          dotnet run \
+            --project backend/GroupPreOrder.Api/GroupPreOrder.Api.csproj \
+            --no-build \
+            --no-launch-profile \
+            --urls http://127.0.0.1:5065 \
+            > backend.log 2>&1 &
 
-      - name: Upload test reports and Playwright artifacts
+      - name: Wait for Backend health
+        shell: bash
+        run: |
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:5065/api/health; then
+              echo "Backend is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+
+          cat backend.log
+          exit 1
+
+      - name: Run all AQA tests
+        run: |
+          dotnet test RestaurantAqa.Tests/RestaurantAqa.Tests.csproj \
+            --no-build \
+            --logger "trx;LogFileName=aqa-results.trx"
+
+      - name: Upload test artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-ui-results
+          name: aqa-test-results
           path: |
             RestaurantAqa.Tests/TestResults/
-            RestaurantAqa.Tests/**/playwright-artifacts/
-          if-no-files-found: warn
-          retention-days: 14
+            RestaurantAqa.Tests/**/aqa-results.trx
+            RestaurantAqa.Tests/**/screenshots/
+            RestaurantAqa.Tests/**/traces/
+            backend.log
+          if-no-files-found: ignore

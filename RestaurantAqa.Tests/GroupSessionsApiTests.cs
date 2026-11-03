@@ -8,25 +8,31 @@ namespace RestaurantAqa.Tests;
 [TestFixture]
 public class GroupSessionsApiTests
 {
-    private const string BaseUrl = "https://localhost:7228";
+    private static readonly string BaseUrl =
+        Environment.GetEnvironmentVariable("AQA_BASE_URL")
+        ?? "https://localhost:7228";
 
-    private const string OwnerId =
-        "0829443b-4549-4369-a8c1-8056367a6109";
+    private string OwnerId = null!;
+    private string GroupId = null!;
+    private string ReservationId = null!;
 
-    private const string GroupId =
-        "f5677ae6-9c11-402d-983f-1e0bb9852881";
+    private sealed record TestData(
+        Guid OwnerId,
+        Guid ReservationId,
+        Guid GroupReservationId
+    );
 
     private HttpClient _client = null!;
 
     private static string SessionsUrl(string groupId) =>
         $"/guest/groups/{groupId}/sessions";
 
+    
     [SetUp]
-    public void SetUp()
+    public async Task SetUp()
     {
         var handler = new HttpClientHandler
         {
-            // Тільки для локального HTTPS development-сервера.
             ServerCertificateCustomValidationCallback =
                 HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
         };
@@ -35,7 +41,22 @@ public class GroupSessionsApiTests
         {
             BaseAddress = new Uri(BaseUrl)
         };
+
+        var data = await _client.GetFromJsonAsync<TestData>(
+            "/aqa/test-data"
+        );
+
+        Assert.That(
+            data,
+            Is.Not.Null,
+            "Testing endpoint must return seeded test data."
+        );
+
+        OwnerId = data!.OwnerId.ToString();
+        ReservationId = data.ReservationId.ToString();
+        GroupId = data.GroupReservationId.ToString();
     }
+
 
     [TearDown]
     public void TearDown()
@@ -77,7 +98,7 @@ public class GroupSessionsApiTests
         var root = data!.RootElement;
         var participants = root.GetProperty("participants");
 
-        Assert.That(participants.GetArrayLength(), Is.EqualTo(2));
+        Assert.That(participants.GetArrayLength(), Is.EqualTo(3));
 
         var people = participants.EnumerateArray().ToArray();
 
@@ -132,7 +153,7 @@ public class GroupSessionsApiTests
 
         var total = root.GetProperty("total").GetDecimal();
 
-        Assert.That(total, Is.EqualTo(360m));
+        Assert.That(total, Is.EqualTo(580m));
 
         var calculatedTotal = people.Sum(
             p => p.GetProperty("total").GetDecimal()
@@ -332,10 +353,6 @@ public class GroupSessionsApiTests
 
         Assert.That(ownerStillExists, Is.True);
     }
-
-
-    private const string ReservationId =
-        "4de5f8e1-43c7-4439-a5c1-924ca112fd74";
 
     private async Task<HttpResponseMessage> SubmitGroup(
         string groupId,

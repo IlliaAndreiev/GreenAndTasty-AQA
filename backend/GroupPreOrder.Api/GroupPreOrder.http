@@ -1,0 +1,10 @@
+@baseUrl = https://localhost:7228
+@groupId = f5677ae6-9c11-402d-983f-1e0bb9852881
+@reservationId = 4de5f8e1-43c7-4439-a5c1-924ca112fd74
+
+POST {{baseUrl}}/group-reservations/{{groupId}}/submit
+Content-Type: application/json
+
+{
+  "reservationId": "{{reservationId}}"
+}
