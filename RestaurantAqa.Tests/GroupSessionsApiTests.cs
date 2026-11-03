@@ -493,4 +493,60 @@ public class GroupSessionsApiTests
     }
 
 
+    
+    [Test]
+    public async Task OwnerCanViewEmptyGroup()
+    {
+        using var createResponse =
+            await _client.PostAsync("/aqa/empty-group", null);
+
+        Assert.That(
+            createResponse.StatusCode,
+            Is.EqualTo(HttpStatusCode.OK)
+        );
+
+        var testData = await createResponse.Content
+            .ReadFromJsonAsync<TestData>();
+
+        Assert.That(testData, Is.Not.Null);
+
+        using var response = await GetSessions(
+            testData!.GroupReservationId.ToString(),
+            testData.OwnerId.ToString()
+        );
+
+        Assert.That(
+            response.StatusCode,
+            Is.EqualTo(HttpStatusCode.OK)
+        );
+
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync()
+        );
+
+        var root = document.RootElement;
+
+        var participants = root.GetProperty("participants");
+
+        Assert.That(
+            participants.GetArrayLength(),
+            Is.EqualTo(0)
+        );
+
+        var total = root.GetProperty("total").GetDecimal();
+
+        Assert.That(total, Is.EqualTo(0m));
+
+        using var cleanupResponse = await _client.DeleteAsync(
+            $"/aqa/empty-group/{testData.GroupReservationId}"
+        );
+
+        Assert.That(
+            cleanupResponse.StatusCode,
+            Is.EqualTo(HttpStatusCode.NoContent)
+        );
+    }
+
+
+
 }
